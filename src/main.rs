@@ -10,8 +10,8 @@ fn main() {
         let start = Instant::now();
         // Log a message
         println!("Calling prints");
-        for screen in screens {
-            println!("capturer {screen:?}");
+        for screen in &screens {
+            println!("capturer {:?}", screen);
             let utc_now = Utc::now();
             let formatted_date_time = utc_now.format("%d-%y-%m-%H-%M-%S").to_string();
 
