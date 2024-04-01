@@ -1,30 +1,70 @@
-use chrono::prelude::*;
-use screenshots::Screen;
-use std::fs;
-use std::time::Instant;
+use std::sync::mpsc;
+use tray_item::{IconSource, TrayItem};
+
+mod screenshotter;
+
+enum Message {
+    Quit,
+    Green,
+    Red,
+}
 
 fn main() {
-    let screens = Screen::all().unwrap();
-    fs::create_dir_all("images").unwrap();
+    let mut tray = TrayItem::new(
+        "Auto Screenshot",
+        IconSource::Resource("another-name-from-rc-file"),
+    )
+    .unwrap();
 
-    // Run the loop forever
+    tray.add_label("Options").unwrap();
+
+    // tray.add_menu_item("Hello", || {
+    //     println!("Hello!");
+    // })
+    // .unwrap();
+
+    // tray.inner_mut().add_separator().unwrap();
+
+    let (tx, rx) = mpsc::sync_channel(1);
+
+    let green_tx = tx.clone();
+    tray.add_menu_item("Start", move || {
+        green_tx.send(Message::Green).unwrap();
+    })
+    .unwrap();
+
+    let red_tx = tx.clone();
+    tray.add_menu_item("Stop", move || {
+        red_tx.send(Message::Red).unwrap();
+    })
+    .unwrap();
+
+    tray.inner_mut().add_separator().unwrap();
+
+    let quit_tx = tx.clone();
+    tray.add_menu_item("Quit", move || {
+        quit_tx.send(Message::Quit).unwrap();
+    })
+    .unwrap();
+
     loop {
-        let start = Instant::now();
-        // Log a message
-        println!("Calling prints");
-        for screen in &screens {
-            println!("capturer {:?}", screen);
-            let utc_now = Utc::now();
-            let formatted_date_time = utc_now.format("screenshot-%d-%m-%Y--%H-%M-%SZ").to_string();
-
-            let image = screen.capture().unwrap();
-            image
-                .save(format!("images/{}.png", formatted_date_time))
-                .unwrap();
+        match rx.recv() {
+            Ok(Message::Quit) => {
+                println!("Quit");
+                break;
+            }
+            Ok(Message::Red) => {
+                println!("Red");
+                tray.set_icon(IconSource::Resource("another-name-from-rc-file"))
+                    .unwrap();
+            }
+            Ok(Message::Green) => {
+                println!("Green");
+                tray.set_icon(IconSource::Resource("name-of-icon-in-rc-file"))
+                    .unwrap();
+                screenshotter::start_screen_shotter();
+            }
+            _ => {}
         }
-
-        // Sleep for a while before logging the next message
-        std::thread::sleep(std::time::Duration::from_secs(60));
-        println!("Capt: {:?}", start.elapsed());
     }
 }
