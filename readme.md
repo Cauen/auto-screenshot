@@ -19,5 +19,9 @@ Every file are stored at a folder with current date.
 ## Release
 cargo build --release
 
+## Release windows without console
+cargo rustc --release -- -Clink-args="/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
+
+
 ## Dev
 cargo run
