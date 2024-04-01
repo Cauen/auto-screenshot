@@ -1,37 +1,78 @@
-use chrono::prelude::*;
-use screenshots::Screen;
-use std::fs;
-use std::time::Instant;
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+use tray_item::{IconSource, TrayItem};
+
+mod screenshotter;
+
+enum Message {
+    Quit,
+    Start,
+    Stop,
+}
 
 fn main() {
-    let screens = Screen::all().unwrap();
+    let mut tray = TrayItem::new(
+        "Auto Screenshot",
+        IconSource::Resource("stopped-icon"),
+    )
+    .unwrap();
 
-    // Run the loop forever
+    // tray.add_label("Options").unwrap();
+
+    let (tx, rx) = mpsc::sync_channel(1);
+    let printing = Arc::new(Mutex::new(false));
+    let printing_clone = Arc::clone(&printing);
+
+    let start_tx = tx.clone();
+    tray.add_menu_item("Start", move || {
+        start_tx.send(Message::Start).unwrap();
+    })
+    .unwrap();
+
+    let stop_tx = tx.clone();
+    tray.add_menu_item("Stop", move || {
+        stop_tx.send(Message::Stop).unwrap();
+    })
+    .unwrap();
+
+    tray.inner_mut().add_separator().unwrap();
+
+    let quit_tx = tx.clone();
+    tray.add_menu_item("Quit", move || {
+        quit_tx.send(Message::Quit).unwrap();
+    })
+    .unwrap();
+
+    println!("Initialized");
+
     loop {
-        let start = Instant::now();
-        // Log a message
-        println!("Calling prints");
-        
-        // Get current date
-        let local_now = Local::now();
-        let formatted_date = local_now.format("%Y-%m-%d").to_string();
-
-        // Create directory for images if it doesn't exist
-        let dir_path = format!("images/{}", formatted_date);
-        fs::create_dir_all(&dir_path).unwrap();
-
-        for screen in &screens {
-            println!("capturer {:?}", screen);
-
-            let formatted_time = local_now.format("%H-%M-%S").to_string();
-            let formatted_date_time = format!("{}--{}", formatted_time, formatted_date);
-
-            let image = screen.capture().unwrap();
-            image.save(format!("{}/{}.png", dir_path, formatted_date_time)).unwrap();
+        match rx.recv() {
+            Ok(Message::Quit) => {
+                println!("Quit");
+                break;
+            }
+            Ok(Message::Start) => {
+                println!("Start");
+                let mut printing = printing.lock().unwrap();
+                *printing = true;
+                tray.set_icon(IconSource::Resource("started-icon")).unwrap();
+                let printing_clone = Arc::clone(&printing_clone);
+                thread::spawn(move || {
+                    while *printing_clone.lock().unwrap() {
+                        println!("printed");
+                        screenshotter::generate_print();
+                        thread::sleep(Duration::from_secs(60));
+                    }
+                });
+            }
+            Ok(Message::Stop) => {
+                println!("Stop");
+                let mut printing = printing.lock().unwrap();
+                *printing = false;
+                tray.set_icon(IconSource::Resource("stopped-icon")).unwrap();
+            }
+            _ => {}
         }
-
-        // Sleep for a while before logging the next message
-        std::thread::sleep(std::time::Duration::from_secs(60));
-        println!("Capt: {:?}", start.elapsed());
     }
 }

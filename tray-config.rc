@@ -1,0 +1,4 @@
+aa-exe-icon ICON "icons/app-icon.ico"
+started-icon ICON "icons/icon-green.ico"
+stopped-icon ICON "icons/icon-red.ico"
+tray-default ICON "icons/app-icon.ico"
