@@ -1,4 +1,4 @@
-![image](https://github.com/Cauen/auto-screenshot/assets/8796757/fd4f9bdf-1101-4bb4-8249-52df0a3f9b44)
+![image](https://github.com/Cauen/auto-screenshot/assets/8796757/90485fa1-cb7f-4652-8a9f-c1f959f87b96)
 
 # Rust Auto Screen Shotter
 
@@ -21,7 +21,6 @@ cargo build --release
 
 ## Release windows without console
 cargo rustc --release -- -Clink-args="/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
-
 
 ## Dev
 cargo run
