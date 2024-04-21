@@ -4,6 +4,9 @@ use std::time::Duration;
 use tray_item::{IconSource, TrayItem};
 
 mod screenshotter;
+mod utils {
+    pub mod logs;
+}
 
 enum Message {
     Quit,
@@ -49,44 +52,52 @@ fn main() {
     })
     .unwrap();
 
-    println!("Initialized");
+    utils::logs::log_message("Initialized");
 
     loop {
         match rx.recv() {
             Ok(Message::Quit) => {
-                println!("Quit");
+                utils::logs::log_message("Quit");
                 break;
             }
             Ok(Message::Start) => {
-                println!("Start");
+                utils::logs::log_message("Start");
                 let mut printing = printing.lock().unwrap();
                 *printing = true;
                 tray.set_icon(IconSource::Resource("started-icon")).unwrap();
                 let printing_clone = Arc::clone(&printing_clone);
                 thread::spawn(move || {
                     while *printing_clone.lock().unwrap() {
-                        println!("printed");
+                        utils::logs::log_message("Spawn thread");
                         screenshotter::generate_print();
                         thread::sleep(Duration::from_secs(60));
                     }
                 });
             }
             Ok(Message::Stop) => {
-                println!("Stop");
+                utils::logs::log_message("Stop");
                 let mut printing = printing.lock().unwrap();
                 *printing = false;
                 tray.set_icon(IconSource::Resource("stopped-icon")).unwrap();
             }
             Ok(Message::OpenFolder) => {
-                println!("Openning Folder");
+                utils::logs::log_message("Openning Folder");
+                utils::logs::log_message("Owpa");
                 let path = ".";
                 match open::that(path) {
-                    Ok(()) => println!("Opened '{}' successfully.", path),
-                    Err(err) => eprintln!("An error occurred when opening '{}': {}", path, err),
+                    Ok(()) => {
+                        let ok_message = format!("Opened '{}' successfully.", path);
+                        utils::logs::log_message(&ok_message)
+                    }
+                    Err(err) => {
+                        let error_message =
+                            format!("An error occurred when opening '{}': {}.", path, err);
+                        utils::logs::log_message(error_message.as_str())
+                    }
                 }
             }
             _ => {
-                println!("Other case");
+                utils::logs::log_message("Other case");
             }
         }
     }

@@ -3,12 +3,14 @@ use screenshots::Screen;
 use std::fs;
 use std::time::Instant;
 
+use crate::utils::logs::log_message;
+
 pub fn generate_print() {
   let screens = Screen::all().unwrap();
 
   let start = Instant::now();
   // Log a message
-  println!("Calling prints");
+  log_message("Calling prints");
 
   // Get current date
   let local_now = Local::now();
@@ -19,7 +21,8 @@ pub fn generate_print() {
   fs::create_dir_all(&dir_path).unwrap();
 
   for screen in &screens {
-      println!("capturer {:?}", screen);
+      let capturer_formatted = format!("capturer {:?}", screen);
+      log_message(&capturer_formatted);
 
       let formatted_time = local_now.format("%H-%M-%S").to_string();
       let formatted_date_time = format!("{}_{}", formatted_date, formatted_time);
@@ -30,5 +33,6 @@ pub fn generate_print() {
           .unwrap();
   }
 
-  println!("Capt: {:?}", start.elapsed());
+  let capturer_formatted = format!("Capt: {:?}", start.elapsed());
+  log_message(&capturer_formatted);
 }
