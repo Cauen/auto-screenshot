@@ -9,14 +9,11 @@ enum Message {
     Quit,
     Start,
     Stop,
+    OpenFolder,
 }
 
 fn main() {
-    let mut tray = TrayItem::new(
-        "Auto Screenshot",
-        IconSource::Resource("stopped-icon"),
-    )
-    .unwrap();
+    let mut tray = TrayItem::new("Auto Screenshot", IconSource::Resource("stopped-icon")).unwrap();
 
     // tray.add_label("Options").unwrap();
 
@@ -33,6 +30,14 @@ fn main() {
     let stop_tx = tx.clone();
     tray.add_menu_item("Stop", move || {
         stop_tx.send(Message::Stop).unwrap();
+    })
+    .unwrap();
+
+    tray.inner_mut().add_separator().unwrap();
+
+    let open_tx = tx.clone();
+    tray.add_menu_item("Open Folder", move || {
+        open_tx.send(Message::OpenFolder).unwrap();
     })
     .unwrap();
 
@@ -72,7 +77,17 @@ fn main() {
                 *printing = false;
                 tray.set_icon(IconSource::Resource("stopped-icon")).unwrap();
             }
-            _ => {}
+            Ok(Message::OpenFolder) => {
+                println!("Openning Folder");
+                let path = ".";
+                match open::that(path) {
+                    Ok(()) => println!("Opened '{}' successfully.", path),
+                    Err(err) => eprintln!("An error occurred when opening '{}': {}", path, err),
+                }
+            }
+            _ => {
+                println!("Other case");
+            }
         }
     }
 }
